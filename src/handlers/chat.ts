@@ -1,12 +1,17 @@
 import type { McpBridge } from "../mcp/client.js";
-import { wrapNetworkError } from "../errors/factory.js";
+import { setRetryable, wrapNetworkError, wrapTimeoutError } from "../errors/factory.js";
+import { extractIdempotencyKey } from "../idempotency/extract.js";
 import { isListTool, normalizeListResponse } from "../pagination/normalize.js";
+import { isMutationTool } from "../translation/tools.js";
 import type {
   ChatCompletionRequest,
   ChatCompletionResponse,
   ChatMessage,
   OpenAIToolCall,
 } from "./types.js";
+
+const IDEMPOTENCY_KEY_REQUIRED_MESSAGE =
+  "Mutation failed. Provide X-Idempotency-Key header to enable safe retries.";
 
 /**
  * Extracts tool_calls from the last assistant message.
@@ -50,15 +55,24 @@ function serializeToolResult(result: unknown): string {
   return JSON.stringify(result);
 }
 
+export interface ChatCompletionOptions {
+  headers?: Record<string, string | string[] | undefined>;
+}
+
 /**
  * handleChatCompletion: extracts tool_calls from last assistant message,
  * calls McpBridge.callTool for each, builds OpenAI-format response.
- * Wraps MCP tool call errors with wrapNetworkError (transient).
+ * Wraps MCP tool call errors and applies setRetryable based on idempotency key and mutation.
  */
 export async function handleChatCompletion(
   request: ChatCompletionRequest,
-  bridge: McpBridge
+  bridge: McpBridge,
+  options?: ChatCompletionOptions
 ): Promise<ChatCompletionResponse> {
+  const headers = options?.headers ?? {};
+  const idempotencyKey = extractIdempotencyKey(headers);
+  const hasIdempotencyKey = idempotencyKey !== null;
+
   const toolCalls = getToolCallsFromLastMessage(request.messages);
   const results: Array<{ id: string; type: "function"; function: { name: string; arguments: string } }> = [];
 
@@ -66,6 +80,7 @@ export async function handleChatCompletion(
     const name = tc.function?.name ?? "";
     const argsJson = typeof tc.function?.arguments === "string" ? tc.function.arguments : "{}";
     const args = parseToolArguments(argsJson);
+    const isReadOnly = !isMutationTool(name);
     try {
       const raw = await bridge.callTool(name, args);
       const toSerialize = isListTool(name) ? normalizeListResponse(raw) : raw;
@@ -77,7 +92,23 @@ export async function handleChatCompletion(
       });
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
-      throw wrapNetworkError(message, { source: "bridge" });
+      const isTimeout =
+        /timeout|deadline/i.test(message);
+      const canonical = isTimeout
+        ? wrapTimeoutError(message, { source: "bridge" })
+        : wrapNetworkError(message, { source: "bridge" });
+      const withRetry = setRetryable(canonical, {
+        isReadOnly,
+        hasIdempotencyKey,
+      });
+      if (
+        !isReadOnly &&
+        !hasIdempotencyKey &&
+        (withRetry.class === "timeout" || withRetry.class === "transient")
+      ) {
+        throw { ...withRetry, message: IDEMPOTENCY_KEY_REQUIRED_MESSAGE };
+      }
+      throw withRetry;
     }
   }
 

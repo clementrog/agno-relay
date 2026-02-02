@@ -45,7 +45,7 @@ export async function startServer(port: number, options: ServerOptions): Promise
     }
     const bridge = app.get('mcpBridge') as McpBridge;
     try {
-      const response = await handleChatCompletion(body, bridge);
+      const response = await handleChatCompletion(body, bridge, { headers: req.headers });
       res.json(response);
     } catch (err: unknown) {
       const canonical = err as { class?: string; retryable?: boolean; message?: string; action?: string; context?: unknown; suggested_backoff_ms?: number | null };
