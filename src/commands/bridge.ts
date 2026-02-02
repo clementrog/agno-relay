@@ -7,8 +7,8 @@ export interface BridgeOptions {
   trace: boolean;
 }
 
-export function runBridge(options: BridgeOptions): void {
-  startServer(options.port, {
+export async function runBridge(options: BridgeOptions): Promise<void> {
+  await startServer(options.port, {
     url: options.url,
     allowAuthPassthrough: options.allowAuthPassthrough,
     trace: options.trace,

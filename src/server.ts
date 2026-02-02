@@ -1,4 +1,5 @@
 import express, { Request, Response } from 'express';
+import { McpBridge } from './mcp';
 
 export interface ServerOptions {
   url: string;
@@ -6,8 +7,12 @@ export interface ServerOptions {
   trace: boolean;
 }
 
-export function startServer(port: number, options: ServerOptions): void {
+export async function startServer(port: number, options: ServerOptions): Promise<void> {
+  const bridge = new McpBridge(options.url);
+  await bridge.connect();
+
   const app = express();
+  app.set('mcpBridge', bridge);
   app.use(express.json());
 
   app.get('/healthz', (_req: Request, res: Response) => {

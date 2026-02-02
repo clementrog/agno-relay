@@ -18,9 +18,9 @@ program
   .option('--port <number>', 'Port', '3847')
   .option('--allow-auth-passthrough', 'Allow auth passthrough')
   .option('--trace', 'Enable trace')
-  .action((options) => {
+  .action(async (options) => {
     const port = parseInt(options.port, 10);
-    runBridge({
+    await runBridge({
       url: options.url,
       port,
       allowAuthPassthrough: !!options.allowAuthPassthrough,
