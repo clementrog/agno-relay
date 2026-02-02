@@ -1,16 +1,28 @@
 import { Client } from '@modelcontextprotocol/sdk/client';
 import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp';
 
+export interface McpBridgeOptions {
+  /** Default auth token sent as Authorization header on MCP requests. */
+  defaultAuthToken?: string | null;
+  /** Optional per-request auth (e.g. passthrough); when set, overrides defaultAuthToken for that request. */
+  getRequestAuth?: () => string | null;
+}
+
 /**
  * Wraps MCP client connection. Connects to MCP servers via URL (Streamable HTTP).
+ * Accepts optional auth token(s); per-request auth overrides default when getRequestAuth returns a value.
  */
 export class McpBridge {
   private readonly url: string;
+  private readonly defaultAuthToken: string | null;
+  private readonly getRequestAuth: (() => string | null) | undefined;
   private client: Client | null = null;
   private transport: StreamableHTTPClientTransport | null = null;
 
-  constructor(url: string) {
+  constructor(url: string, options?: McpBridgeOptions) {
     this.url = url;
+    this.defaultAuthToken = options?.defaultAuthToken ?? null;
+    this.getRequestAuth = options?.getRequestAuth;
   }
 
   /**
@@ -26,8 +38,25 @@ export class McpBridge {
       throw new Error(`MCP server URL invalid: ${this.url}. ${message}`);
     }
 
+    const defaultToken = this.defaultAuthToken ?? '';
+    const createAuthFetch = (): (input: URL | RequestInfo, init?: RequestInit) => Promise<Response> => {
+      return (input: URL | RequestInfo, init?: RequestInit) => {
+        const override = this.getRequestAuth?.() ?? null;
+        const headers = new Headers(init?.headers);
+        if (override !== null && override !== '') {
+          headers.set('Authorization', override);
+        } else if (defaultToken !== '') {
+          headers.set('Authorization', defaultToken);
+        }
+        return fetch(input, { ...init, headers });
+      };
+    };
+
     try {
-      this.transport = new StreamableHTTPClientTransport(urlObj);
+      this.transport = new StreamableHTTPClientTransport(urlObj, {
+        requestInit: defaultToken ? { headers: { Authorization: defaultToken } } : undefined,
+        fetch: createAuthFetch(),
+      });
       this.client = new Client(
         { name: 'agno-bridge', version: '1.0.0' },
         { capabilities: {} },

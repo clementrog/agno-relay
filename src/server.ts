@@ -1,5 +1,7 @@
+import { AsyncLocalStorage } from 'async_hooks';
 import express, { Request, Response } from 'express';
 import { McpBridge } from './mcp';
+import { loadAuthConfig, extractPassthroughAuth } from './auth/index.js';
 import { handleChatCompletion } from './handlers/index.js';
 import { createCanonicalError } from './errors/factory.js';
 import type { ChatCompletionRequest } from './handlers/types.js';
@@ -10,8 +12,14 @@ export interface ServerOptions {
   trace: boolean;
 }
 
+const requestAuthStorage = new AsyncLocalStorage<{ auth: string | null }>();
+
 export async function startServer(port: number, options: ServerOptions): Promise<void> {
-  const bridge = new McpBridge(options.url);
+  const authConfig = loadAuthConfig(options.allowAuthPassthrough);
+  const bridge = new McpBridge(options.url, {
+    defaultAuthToken: authConfig.bridgeToken,
+    getRequestAuth: () => requestAuthStorage.getStore()?.auth ?? null,
+  });
   await bridge.connect();
 
   const app = express();
@@ -43,9 +51,14 @@ export async function startServer(port: number, options: ServerOptions): Promise
       res.status(422).json(err);
       return;
     }
+    const effectiveAuth =
+      extractPassthroughAuth(req.headers, authConfig.allowPassthrough) ?? authConfig.bridgeToken;
     const bridge = app.get('mcpBridge') as McpBridge;
     try {
-      const response = await handleChatCompletion(body, bridge, { headers: req.headers });
+      const response = await requestAuthStorage.run(
+        { auth: effectiveAuth },
+        async () => await handleChatCompletion(body, bridge, { headers: req.headers })
+      );
       res.json(response);
     } catch (err: unknown) {
       const canonical = err as { class?: string; retryable?: boolean; message?: string; action?: string; context?: unknown; suggested_backoff_ms?: number | null };
