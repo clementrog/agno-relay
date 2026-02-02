@@ -1,5 +1,6 @@
 import type { McpBridge } from "../mcp/client.js";
 import { wrapNetworkError } from "../errors/factory.js";
+import { isListTool, normalizeListResponse } from "../pagination/normalize.js";
 import type {
   ChatCompletionRequest,
   ChatCompletionResponse,
@@ -67,7 +68,8 @@ export async function handleChatCompletion(
     const args = parseToolArguments(argsJson);
     try {
       const raw = await bridge.callTool(name, args);
-      const serialized = serializeToolResult(raw);
+      const toSerialize = isListTool(name) ? normalizeListResponse(raw) : raw;
+      const serialized = serializeToolResult(toSerialize);
       results.push({
         id: tc.id ?? "",
         type: "function",
