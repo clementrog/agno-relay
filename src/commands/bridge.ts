@@ -1,3 +1,5 @@
+import { startServer } from '../server';
+
 export interface BridgeOptions {
   url: string;
   port: number;
@@ -6,6 +8,9 @@ export interface BridgeOptions {
 }
 
 export function runBridge(options: BridgeOptions): void {
-  console.log('Bridge starting...');
-  console.log('Options:', options);
+  startServer(options.port, {
+    url: options.url,
+    allowAuthPassthrough: options.allowAuthPassthrough,
+    trace: options.trace,
+  });
 }
