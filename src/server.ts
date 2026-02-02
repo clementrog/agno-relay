@@ -1,7 +1,7 @@
 import { AsyncLocalStorage } from 'async_hooks';
 import express, { Request, Response, NextFunction } from 'express';
 import type { Application } from 'express';
-import { McpBridge } from './mcp';
+import { McpBridge } from './mcp/index.js';
 import { loadAuthConfig, extractPassthroughAuth } from './auth/index.js';
 import { handleChatCompletion } from './handlers/index.js';
 import { createCanonicalError } from './errors/factory.js';

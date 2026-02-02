@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 
 import { Command } from 'commander';
-import { runBridge } from './commands/bridge';
-import { runReport } from './commands/report';
+import { runBridge } from './commands/bridge.js';
+import { runReport } from './commands/report.js';
 
 const program = new Command();
 

@@ -4,6 +4,7 @@
  * create/update issue mutations, canonical errors (401, 429, 5xx), streaming rejection.
  */
 
+import { jest, describe, it, expect } from '@jest/globals';
 import request from 'supertest';
 import { wrapUpstreamError, type UpstreamResponse } from '../../src/errors/factory';
 import { normalizeListResponse } from '../../src/pagination/normalize';

@@ -1,5 +1,5 @@
-import { Client } from '@modelcontextprotocol/sdk/client';
-import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp';
+import { Client } from '@modelcontextprotocol/sdk/client/index.js';
+import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
 
 export interface McpBridgeOptions {
   /** Default auth token sent as Authorization header on MCP requests. */

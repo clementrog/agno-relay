@@ -1,0 +1,103 @@
+{
+  "goal": "Build agno MVP - a reliability bridge translating MCP tool servers into OpenAI-compatible tools interface with canonical error contract, pagination normalization, and GitHub reference adapter",
+  "tasks": [
+    {
+      "id": "task-001",
+      "title": "Project scaffolding + CLI skeleton",
+      "description": "Initialize Node.js/TypeScript project with package.json (name: agno), tsconfig.json, src/ structure, and CLI framework (commander) with 'bridge' and 'report' subcommands",
+      "status": "completed",
+      "priority": 1
+    },
+    {
+      "id": "task-002",
+      "title": "HTTP server with endpoints skeleton",
+      "description": "Create Express server with POST /v1/chat/completions (skeleton), GET /healthz, GET /capabilities. Server starts on port 3847 (auto-increment if busy). Print 'Bridge ready' + endpoint URL on startup",
+      "status": "completed",
+      "priority": 2
+    },
+    {
+      "id": "task-003",
+      "title": "MCP client integration",
+      "description": "Implement MCP client to connect to upstream MCP server URL (from --url flag), fetch tools list, handle connection errors with canonical error wrapping",
+      "status": "completed",
+      "priority": 3
+    },
+    {
+      "id": "task-004",
+      "title": "Canonical error contract",
+      "description": "Implement all 8 error classes (auth, permission, invalid_args, not_found, conflict, rate_limit, transient, timeout) with envelope structure including class, retryable, suggested_backoff_ms, message, action, context. Map HTTP status codes to classes per spec",
+      "status": "completed",
+      "priority": 4
+    },
+    {
+      "id": "task-005",
+      "title": "MCP to OpenAI tools translation",
+      "description": "Translate MCP tools list to OpenAI tools[] format (function schemas). Ensure stable naming and parameter shapes. Fail closed with invalid_args if representation unsafe. Inject mutation warnings for non-idempotent operations",
+      "status": "completed",
+      "priority": 5
+    },
+    {
+      "id": "task-006",
+      "title": "Request/response flow implementation",
+      "description": "Handle incoming OpenAI chat completions requests, extract tool calls, translate to MCP tool invocations, execute against upstream, translate responses back to OpenAI format. Return canonical error for stream:true requests",
+      "status": "completed",
+      "priority": 6
+    },
+    {
+      "id": "task-007",
+      "title": "Pagination normalization",
+      "description": "Implement opaque cursor pagination for list-like tools. Output shape: {data: [], pagination: {has_more: bool, cursor: string}}. Encode upstream page tokens/numbers into opaque cursor",
+      "status": "completed",
+      "priority": 7
+    },
+    {
+      "id": "task-008",
+      "title": "Idempotency + mutation handling",
+      "description": "Detect mutation operations (heuristic + known list). For mutations: require X-Idempotency-Key for safe retries, return retryable:false without key. Allow safe retries for read-only operations on rate_limit/transient",
+      "status": "completed",
+      "priority": 8
+    },
+    {
+      "id": "task-009",
+      "title": "Auth handling",
+      "description": "Implement bridge-level credential reading from env (GITHUB_TOKEN etc). Optional --allow-auth-passthrough flag for per-request auth. Whitelist only Authorization header for passthrough. Never log auth values",
+      "status": "completed",
+      "priority": 9
+    },
+    {
+      "id": "task-010",
+      "title": "Logging with redaction",
+      "description": "Implement stdout logging with default redaction of tokens, cookies, authorization headers. No request/response bodies logged unless --trace. No disk persistence",
+      "status": "completed",
+      "priority": 10
+    },
+    {
+      "id": "task-011",
+      "title": "Trace mode",
+      "description": "Implement --trace flag for side-by-side sanitized view: OpenAI request vs translated MCP request, OpenAI response vs MCP response. Truncate large values, always redact secrets",
+      "status": "completed",
+      "priority": 11
+    },
+    {
+      "id": "task-012",
+      "title": "CLI startup output polish",
+      "description": "On bridge start: print capabilities block (streaming unsupported, pagination cursor, errors canonical, auth mode), copy/paste snippets (JS + Python), insight tease after first request",
+      "status": "completed",
+      "priority": 12
+    },
+    {
+      "id": "task-013",
+      "title": "Conformance report command",
+      "description": "Implement 'agno report' command. Default: markdown block with capability matrix, conformance score (0-100), last verified timestamp, badge snippet. --format json for CI. Score based on schema validity, error wrapping, pagination, auth, determinism",
+      "status": "completed",
+      "priority": 13
+    },
+    {
+      "id": "task-014",
+      "title": "GitHub adapter integration test",
+      "description": "End-to-end test with GitHub MCP server: list repos (pagination), create issue (mutation), update issue (mutation), intentional failures (bad args, bad auth) showing canonical errors. Verify all acceptance criteria",
+      "status": "completed",
+      "priority": 14
+    }
+  ]
+}
