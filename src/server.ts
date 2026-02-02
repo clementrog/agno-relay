@@ -5,6 +5,7 @@ import { loadAuthConfig, extractPassthroughAuth } from './auth/index.js';
 import { handleChatCompletion } from './handlers/index.js';
 import { createCanonicalError } from './errors/factory.js';
 import { Logger } from './logging/index.js';
+import { formatTrace } from './trace/format.js';
 import type { ChatCompletionRequest } from './handlers/types.js';
 
 const logger = new Logger();
@@ -74,7 +75,16 @@ export async function startServer(port: number, options: ServerOptions): Promise
     try {
       const response = await requestAuthStorage.run(
         { auth: effectiveAuth },
-        async () => await handleChatCompletion(body, bridge, { headers: req.headers })
+        async () =>
+          await handleChatCompletion(body, bridge, {
+            headers: req.headers,
+            trace: options.trace,
+            onTrace: options.trace
+              ? (entry) => {
+                  console.log(formatTrace(entry));
+                }
+              : undefined,
+          })
       );
       res.json(response);
     } catch (err: unknown) {

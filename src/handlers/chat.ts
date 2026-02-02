@@ -3,6 +3,7 @@ import { setRetryable, wrapNetworkError, wrapTimeoutError } from "../errors/fact
 import { extractIdempotencyKey } from "../idempotency/extract.js";
 import { isListTool, normalizeListResponse } from "../pagination/normalize.js";
 import { isMutationTool } from "../translation/tools.js";
+import type { TraceEntry } from "../trace/types.js";
 import type {
   ChatCompletionRequest,
   ChatCompletionResponse,
@@ -57,6 +58,9 @@ function serializeToolResult(result: unknown): string {
 
 export interface ChatCompletionOptions {
   headers?: Record<string, string | string[] | undefined>;
+  /** When true, capture trace data; if onTrace is provided, it will be called with the entry. */
+  trace?: boolean;
+  onTrace?: (entry: TraceEntry) => void;
 }
 
 /**
@@ -72,17 +76,22 @@ export async function handleChatCompletion(
   const headers = options?.headers ?? {};
   const idempotencyKey = extractIdempotencyKey(headers);
   const hasIdempotencyKey = idempotencyKey !== null;
+  const captureTrace = options?.trace === true && typeof options?.onTrace === "function";
 
   const toolCalls = getToolCallsFromLastMessage(request.messages);
   const results: Array<{ id: string; type: "function"; function: { name: string; arguments: string } }> = [];
+  const mcpCalls: TraceEntry["mcpCalls"] = [];
+  const mcpResponses: unknown[] = [];
 
   for (const tc of toolCalls) {
     const name = tc.function?.name ?? "";
     const argsJson = typeof tc.function?.arguments === "string" ? tc.function.arguments : "{}";
     const args = parseToolArguments(argsJson);
+    if (captureTrace) mcpCalls.push({ name, arguments: args });
     const isReadOnly = !isMutationTool(name);
     try {
       const raw = await bridge.callTool(name, args);
+      if (captureTrace) mcpResponses.push(raw);
       const toSerialize = isListTool(name) ? normalizeListResponse(raw) : raw;
       const serialized = serializeToolResult(toSerialize);
       results.push({
@@ -132,5 +141,14 @@ export async function handleChatCompletion(
       total_tokens: 0,
     },
   };
+
+  if (captureTrace) {
+    options!.onTrace!({
+      openaiRequest: request,
+      mcpCalls,
+      mcpResponses,
+      openaiResponse: response,
+    });
+  }
   return response;
 }
