@@ -1,5 +1,8 @@
 import express, { Request, Response } from 'express';
 import { McpBridge } from './mcp';
+import { handleChatCompletion } from './handlers/index.js';
+import { createCanonicalError } from './errors/factory.js';
+import type { ChatCompletionRequest } from './handlers/types.js';
 
 export interface ServerOptions {
   url: string;
@@ -28,8 +31,33 @@ export async function startServer(port: number, options: ServerOptions): Promise
     });
   });
 
-  app.post('/v1/chat/completions', (_req: Request, res: Response) => {
-    res.status(501).json({ message: 'Not implemented yet' });
+  app.post('/v1/chat/completions', async (req: Request, res: Response) => {
+    const body = req.body as ChatCompletionRequest;
+    if (body?.stream === true) {
+      const err = createCanonicalError(
+        'invalid_args',
+        'Streaming is not supported',
+        { source: 'bridge' },
+        { retryable: false }
+      );
+      res.status(422).json(err);
+      return;
+    }
+    const bridge = app.get('mcpBridge') as McpBridge;
+    try {
+      const response = await handleChatCompletion(body, bridge);
+      res.json(response);
+    } catch (err: unknown) {
+      const canonical = err as { class?: string; retryable?: boolean; message?: string; action?: string; context?: unknown; suggested_backoff_ms?: number | null };
+      if (canonical?.class && canonical?.message !== undefined) {
+        const status = canonical.class === 'invalid_args' ? 422 : canonical.class === 'auth' ? 401 : canonical.class === 'permission' ? 403 : canonical.class === 'not_found' ? 404 : canonical.class === 'conflict' ? 409 : canonical.class === 'rate_limit' ? 429 : canonical.class === 'timeout' ? 504 : 503;
+        res.status(status).json(canonical);
+      } else {
+        res.status(503).json(
+          createCanonicalError('transient', err instanceof Error ? err.message : String(err), { source: 'bridge' }, { retryable: true })
+        );
+      }
+    }
   });
 
   const maxAttempts = 11; // port, port+1, ... port+10
