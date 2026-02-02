@@ -1,10 +1,13 @@
 import { AsyncLocalStorage } from 'async_hooks';
-import express, { Request, Response } from 'express';
+import express, { Request, Response, NextFunction } from 'express';
 import { McpBridge } from './mcp';
 import { loadAuthConfig, extractPassthroughAuth } from './auth/index.js';
 import { handleChatCompletion } from './handlers/index.js';
 import { createCanonicalError } from './errors/factory.js';
+import { Logger } from './logging/index.js';
 import type { ChatCompletionRequest } from './handlers/types.js';
+
+const logger = new Logger();
 
 export interface ServerOptions {
   url: string;
@@ -25,6 +28,20 @@ export async function startServer(port: number, options: ServerOptions): Promise
   const app = express();
   app.set('mcpBridge', bridge);
   app.use(express.json());
+
+  app.use((req: Request, res: Response, next: NextFunction) => {
+    const start = Date.now();
+    res.on('finish', () => {
+      const durationMs = Date.now() - start;
+      logger.log('info', 'request', {
+        method: req.method,
+        path: req.path,
+        statusCode: res.statusCode,
+        durationMs,
+      });
+    });
+    next();
+  });
 
   app.get('/healthz', (_req: Request, res: Response) => {
     res.status(200).json({ status: 'ok' });
