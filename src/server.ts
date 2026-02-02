@@ -6,6 +6,7 @@ import { handleChatCompletion } from './handlers/index.js';
 import { createCanonicalError } from './errors/factory.js';
 import { Logger } from './logging/index.js';
 import { formatTrace } from './trace/format.js';
+import { printStartupBanner, printSnippets } from './output/index.js';
 import type { ChatCompletionRequest } from './handlers/types.js';
 
 const logger = new Logger();
@@ -87,6 +88,10 @@ export async function startServer(port: number, options: ServerOptions): Promise
           })
       );
       res.json(response);
+      if (!firstRequestDone) {
+        firstRequestDone = true;
+        console.log(INSIGHT_TEASE);
+      }
     } catch (err: unknown) {
       const canonical = err as { class?: string; retryable?: boolean; message?: string; action?: string; context?: unknown; suggested_backoff_ms?: number | null };
       if (canonical?.class && canonical?.message !== undefined) {
@@ -102,12 +107,17 @@ export async function startServer(port: number, options: ServerOptions): Promise
 
   const maxAttempts = 11; // port, port+1, ... port+10
   let attempt = 0;
+  let firstRequestDone = false;
+  const INSIGHT_TEASE = 'Run agno report for conformance + README badge';
 
   function tryListen(currentPort: number): void {
     const server = app.listen(currentPort, () => {
-      console.log('Bridge ready');
-      console.log(`Endpoint: http://localhost:${currentPort}/v1/chat/completions`);
-      console.log(`Upstream: ${options.url}`);
+      printStartupBanner({
+        port: currentPort,
+        url: options.url,
+        allowAuthPassthrough: options.allowAuthPassthrough,
+      });
+      printSnippets({ baseUrl: `http://localhost:${currentPort}` });
     });
 
     server.on('error', (err: NodeJS.ErrnoException) => {
