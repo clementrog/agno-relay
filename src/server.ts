@@ -1,5 +1,6 @@
 import { AsyncLocalStorage } from 'async_hooks';
 import express, { Request, Response, NextFunction } from 'express';
+import type { Application } from 'express';
 import { McpBridge } from './mcp';
 import { loadAuthConfig, extractPassthroughAuth } from './auth/index.js';
 import { handleChatCompletion } from './handlers/index.js';
@@ -17,15 +18,28 @@ export interface ServerOptions {
   trace: boolean;
 }
 
+export interface CreateAppOptions extends ServerOptions {
+  /** When provided, use this bridge and skip connecting (for tests). */
+  bridge?: McpBridge;
+}
+
 const requestAuthStorage = new AsyncLocalStorage<{ auth: string | null }>();
 
-export async function startServer(port: number, options: ServerOptions): Promise<void> {
+/**
+ * Creates the Express app with MCP bridge. When options.bridge is provided, uses it without connecting (for tests).
+ */
+export async function createApp(options: CreateAppOptions): Promise<Application> {
   const authConfig = loadAuthConfig(options.allowAuthPassthrough);
-  const bridge = new McpBridge(options.url, {
-    defaultAuthToken: authConfig.bridgeToken,
-    getRequestAuth: () => requestAuthStorage.getStore()?.auth ?? null,
-  });
-  await bridge.connect();
+  let bridge: McpBridge;
+  if (options.bridge) {
+    bridge = options.bridge;
+  } else {
+    bridge = new McpBridge(options.url, {
+      defaultAuthToken: authConfig.bridgeToken,
+      getRequestAuth: () => requestAuthStorage.getStore()?.auth ?? null,
+    });
+    await bridge.connect();
+  }
 
   const app = express();
   app.set('mcpBridge', bridge);
@@ -58,6 +72,9 @@ export async function startServer(port: number, options: ServerOptions): Promise
     });
   });
 
+  let firstRequestDone = false;
+  const INSIGHT_TEASE = 'Run agno report for conformance + README badge';
+
   app.post('/v1/chat/completions', async (req: Request, res: Response) => {
     const body = req.body as ChatCompletionRequest;
     if (body?.stream === true) {
@@ -72,12 +89,12 @@ export async function startServer(port: number, options: ServerOptions): Promise
     }
     const effectiveAuth =
       extractPassthroughAuth(req.headers, authConfig.allowPassthrough) ?? authConfig.bridgeToken;
-    const bridge = app.get('mcpBridge') as McpBridge;
+    const appBridge = app.get('mcpBridge') as McpBridge;
     try {
       const response = await requestAuthStorage.run(
         { auth: effectiveAuth },
         async () =>
-          await handleChatCompletion(body, bridge, {
+          await handleChatCompletion(body, appBridge, {
             headers: req.headers,
             trace: options.trace,
             onTrace: options.trace
@@ -105,10 +122,14 @@ export async function startServer(port: number, options: ServerOptions): Promise
     }
   });
 
+  return app;
+}
+
+export async function startServer(port: number, options: ServerOptions): Promise<void> {
+  const app = await createApp(options);
+
   const maxAttempts = 11; // port, port+1, ... port+10
   let attempt = 0;
-  let firstRequestDone = false;
-  const INSIGHT_TEASE = 'Run agno report for conformance + README badge';
 
   function tryListen(currentPort: number): void {
     const server = app.listen(currentPort, () => {
