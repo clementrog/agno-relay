@@ -1,4 +1,4 @@
-# Agnol-relay
+# Agno-relay
 
 [![Conformance](https://img.shields.io/badge/conformance-100%25-brightgreen)](https://github.com/agno/agno)
 
