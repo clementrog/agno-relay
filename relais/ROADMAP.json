@@ -1,103 +1,125 @@
 {
-  "goal": "Build agno MVP - a reliability bridge translating MCP tool servers into OpenAI-compatible tools interface with canonical error contract, pagination normalization, and GitHub reference adapter",
+  "goal": "agno-relay Launch Plan - Rename, build demo kit, prepare launch assets, and ship",
   "tasks": [
     {
       "id": "task-001",
-      "title": "Project scaffolding + CLI skeleton",
-      "description": "Initialize Node.js/TypeScript project with package.json (name: agno), tsconfig.json, src/ structure, and CLI framework (commander) with 'bridge' and 'report' subcommands",
+      "title": "Rename package to agno-relay",
+      "description": "Update package.json: name to 'agno-relay', bin to 'agno-relay': './dist/cli.js'. Update src/cli.ts branding. Update all README references from 'agno' to 'agno-relay', 'npx agno' to 'npx agno-relay'",
       "status": "completed",
-      "priority": 1
+      "priority": 1,
+      "executor": "cursor"
     },
     {
       "id": "task-002",
-      "title": "HTTP server with endpoints skeleton",
-      "description": "Create Express server with POST /v1/chat/completions (skeleton), GET /healthz, GET /capabilities. Server starts on port 3847 (auto-increment if busy). Print 'Bridge ready' + endpoint URL on startup",
+      "title": "Add disambiguation to README",
+      "description": "Add at very top of README before title: '> **Note**: This project is unrelated to [agno-agi/agno](https://github.com/agno-agi/agno) (Python agent framework).'",
       "status": "completed",
-      "priority": 2
+      "priority": 2,
+      "executor": "cursor"
     },
     {
       "id": "task-003",
-      "title": "MCP client integration",
-      "description": "Implement MCP client to connect to upstream MCP server URL (from --url flag), fetch tools list, handle connection errors with canonical error wrapping",
+      "title": "GitHub repo rename + metadata",
+      "description": "HUMAN: In GitHub Settings, rename repo to 'agno-relay'. Add description: 'Reliability bridge: MCP → OpenAI tools with canonical errors, safe retries, pagination normalization'. Add topics: mcp, openai-tools, llm-agents, ai-agents, protocol-bridge, reliability, tool-calling",
       "status": "completed",
-      "priority": 3
+      "priority": 3,
+      "executor": "human"
     },
     {
       "id": "task-004",
-      "title": "Canonical error contract",
-      "description": "Implement all 8 error classes (auth, permission, invalid_args, not_found, conflict, rate_limit, transient, timeout) with envelope structure including class, retryable, suggested_backoff_ms, message, action, context. Map HTTP status codes to classes per spec",
-      "status": "completed",
-      "priority": 4
+      "title": "npm publish",
+      "description": "HUMAN: Run 'npm login' if needed, then 'npm publish --access public'. Verify with 'npx agno-relay --help'",
+      "status": "pending",
+      "priority": 4,
+      "executor": "human"
     },
     {
       "id": "task-005",
-      "title": "MCP to OpenAI tools translation",
-      "description": "Translate MCP tools list to OpenAI tools[] format (function schemas). Ensure stable naming and parameter shapes. Fail closed with invalid_args if representation unsafe. Inject mutation warnings for non-idempotent operations",
-      "status": "completed",
-      "priority": 5
+      "title": "Create GitHub release v0.1.0",
+      "description": "HUMAN: Create GitHub release with tag v0.1.0, title 'Initial release', body from README Features section",
+      "status": "pending",
+      "priority": 5,
+      "executor": "human"
     },
     {
       "id": "task-006",
-      "title": "Request/response flow implementation",
-      "description": "Handle incoming OpenAI chat completions requests, extract tool calls, translate to MCP tool invocations, execute against upstream, translate responses back to OpenAI format. Return canonical error for stream:true requests",
-      "status": "completed",
-      "priority": 6
+      "title": "Build mock MCP server",
+      "description": "Create examples/mock-mcp/server.js - Express server ~150 lines supporting: list_repos with pagination (3 items first call, 2 more second call), create_issue mutation with idempotency tracking, error simulation endpoints (?error=401|403|429|502|503|504), Retry-After header for 429, X-Idempotency-Key tracking",
+      "status": "pending",
+      "priority": 6,
+      "executor": "cursor"
     },
     {
       "id": "task-007",
-      "title": "Pagination normalization",
-      "description": "Implement opaque cursor pagination for list-like tools. Output shape: {data: [], pagination: {has_more: bool, cursor: string}}. Encode upstream page tokens/numbers into opaque cursor",
-      "status": "completed",
-      "priority": 7
+      "title": "Add agno-relay demo command",
+      "description": "Create src/commands/demo.ts: Start mock MCP server on port 3000, start bridge pointing to localhost:3000, log both endpoints with capabilities summary, show curl example, keep alive until Ctrl+C. Wire into CLI",
+      "status": "pending",
+      "priority": 7,
+      "executor": "cursor"
     },
     {
       "id": "task-008",
-      "title": "Idempotency + mutation handling",
-      "description": "Detect mutation operations (heuristic + known list). For mutations: require X-Idempotency-Key for safe retries, return retryable:false without key. Allow safe retries for read-only operations on rate_limit/transient",
-      "status": "completed",
-      "priority": 8
+      "title": "Create curl example scripts",
+      "description": "Create examples/curl/ with executable scripts: 01-list-repos.sh (basic tool call), 02-pagination.sh (two calls with cursor), 03-rate-limit.sh (trigger 429), 04-transient.sh (trigger 502), 05-idempotency.sh (mutation with retry). Each with comments and jq formatting",
+      "status": "pending",
+      "priority": 8,
+      "executor": "cursor"
     },
     {
       "id": "task-009",
-      "title": "Auth handling",
-      "description": "Implement bridge-level credential reading from env (GITHUB_TOKEN etc). Optional --allow-auth-passthrough flag for per-request auth. Whitelist only Authorization header for passthrough. Never log auth values",
-      "status": "completed",
-      "priority": 9
+      "title": "Update README with demo section",
+      "description": "Add 'Try it in 60 seconds' section after Quick Start showing npx agno-relay demo and curl examples",
+      "status": "pending",
+      "priority": 9,
+      "executor": "cursor"
     },
     {
       "id": "task-010",
-      "title": "Logging with redaction",
-      "description": "Implement stdout logging with default redaction of tokens, cookies, authorization headers. No request/response bodies logged unless --trace. No disk persistence",
-      "status": "completed",
-      "priority": 10
+      "title": "Add 'Why this exists' section to README",
+      "description": "Add section after demo explaining: inconsistent errors, varying pagination, dangerous retries without idempotency. How agno-relay fixes each with canonical errors, safe retries, normalized pagination",
+      "status": "pending",
+      "priority": 10,
+      "executor": "cursor"
     },
     {
       "id": "task-011",
-      "title": "Trace mode",
-      "description": "Implement --trace flag for side-by-side sanitized view: OpenAI request vs translated MCP request, OpenAI response vs MCP response. Truncate large values, always redact secrets",
-      "status": "completed",
-      "priority": 11
+      "title": "Create launch assets directory",
+      "description": "Create launch/ directory with: twitter-thread.md (10-tweet thread), hn-post.md (Show HN post), checklist.md (launch day checklist)",
+      "status": "pending",
+      "priority": 11,
+      "executor": "cursor"
     },
     {
       "id": "task-012",
-      "title": "CLI startup output polish",
-      "description": "On bridge start: print capabilities block (streaming unsupported, pagination cursor, errors canonical, auth mode), copy/paste snippets (JS + Python), insight tease after first request",
-      "status": "completed",
-      "priority": 12
+      "title": "Record demo video",
+      "description": "HUMAN: Setup clean terminal (dark theme, 16-18px font, ~100 chars wide). Record 80-second demo per script: hook, start demo, success call, pagination, rate limit, idempotency, conformance report, CTA. Export as GIF (<15MB) and MP4 (720p/1080p)",
+      "status": "pending",
+      "priority": 12,
+      "executor": "human"
     },
     {
       "id": "task-013",
-      "title": "Conformance report command",
-      "description": "Implement 'agno report' command. Default: markdown block with capability matrix, conformance score (0-100), last verified timestamp, badge snippet. --format json for CI. Score based on schema validity, error wrapping, pagination, auth, determinism",
-      "status": "completed",
-      "priority": 13
+      "title": "Add demo GIF to README",
+      "description": "Create assets/ directory, add demo.gif, update README with Demo section showing GIF and link to full video",
+      "status": "pending",
+      "priority": 13,
+      "executor": "human"
     },
     {
       "id": "task-014",
-      "title": "GitHub adapter integration test",
-      "description": "End-to-end test with GitHub MCP server: list repos (pagination), create issue (mutation), update issue (mutation), intentional failures (bad args, bad auth) showing canonical errors. Verify all acceptance criteria",
-      "status": "completed",
-      "priority": 14
+      "title": "Launch day execution",
+      "description": "HUMAN: Post X thread (T-30min), submit HN Show HN (T+0), post r/LocalLLaMA (T+15min), post r/MachineLearning (T+30min), Anthropic Discord (T+45min), LangChain Discord (T+60min), DM 5 agent builders (T+90min). Respond to all comments within 2 hours",
+      "status": "pending",
+      "priority": 14,
+      "executor": "human"
+    },
+    {
+      "id": "task-015",
+      "title": "Create FEEDBACK.md for post-launch",
+      "description": "Create FEEDBACK.md in repo root with sections: Feature requests, Bugs reported, Praise (for social proof)",
+      "status": "pending",
+      "priority": 15,
+      "executor": "cursor"
     }
   ]
 }
