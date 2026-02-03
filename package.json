@@ -1,10 +1,10 @@
 {
-  "name": "agno",
+  "name": "agno-relay",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
   "bin": {
-    "agno": "dist/cli.js"
+    "agno-relay": "./dist/cli.js"
   },
   "scripts": {
     "build": "tsc",

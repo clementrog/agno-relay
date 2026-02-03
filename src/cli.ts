@@ -7,8 +7,8 @@ import { runReport } from './commands/report.js';
 const program = new Command();
 
 program
-  .name('agno')
-  .description('agno CLI')
+  .name('agno-relay')
+  .description('agno-relay — MCP to OpenAI reliability bridge')
   .version('1.0.0');
 
 program

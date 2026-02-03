@@ -29,7 +29,7 @@ npm run build
 node dist/cli.js bridge --url http://localhost:3000
 
 # Or with npx (when published)
-npx agno bridge --url http://localhost:3000
+npx agno-relay bridge --url http://localhost:3000
 ```
 
 Output:
@@ -51,7 +51,7 @@ Capabilities:
 ### Bridge Command
 
 ```bash
-agno bridge --url <mcp_server_url> [options]
+agno-relay bridge --url <mcp_server_url> [options]
 ```
 
 | Option | Description | Default |
@@ -64,7 +64,7 @@ agno bridge --url <mcp_server_url> [options]
 ### Report Command
 
 ```bash
-agno report [options]
+agno-relay report [options]
 ```
 
 | Option | Description | Default |
@@ -214,7 +214,7 @@ export GITHUB_TOKEN=ghp_xxxx
 # or
 export MCP_AUTH_TOKEN=your-token
 
-agno bridge --url http://localhost:3000
+agno-relay bridge --url http://localhost:3000
 ```
 
 ### Per-Request Passthrough
@@ -222,7 +222,7 @@ agno bridge --url http://localhost:3000
 Enable forwarding of `Authorization` header from incoming requests:
 
 ```bash
-agno bridge --url http://localhost:3000 --allow-auth-passthrough
+agno-relay bridge --url http://localhost:3000 --allow-auth-passthrough
 ```
 
 Then include the header in your requests:
@@ -242,7 +242,7 @@ Mutation tools (create, update, delete, etc.) include a warning in their descrip
 Enable detailed request/response logging:
 
 ```bash
-agno bridge --url http://localhost:3000 --trace
+agno-relay bridge --url http://localhost:3000 --trace
 ```
 
 Output shows side-by-side comparison:
@@ -269,7 +269,7 @@ All sensitive values are automatically redacted.
 Generate a conformance report for your README:
 
 ```bash
-agno report
+agno-relay report
 ```
 
 Output:
@@ -279,7 +279,7 @@ Output:
 [![Conformance](https://img.shields.io/badge/conformance-100%25-brightgreen)](https://github.com/agno/report)
 
 **Score:** 100/100
-**Adapter:** agno
+**Adapter:** agno-relay
 **Last verified:** 2024-01-15T10:30:00.000Z
 
 ### Capability matrix
@@ -295,7 +295,7 @@ Output:
 
 For CI pipelines:
 ```bash
-agno report --format json
+agno-relay report --format json
 ```
 
 ## Code Examples
