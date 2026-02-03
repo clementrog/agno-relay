@@ -1,4 +1,6 @@
-# Agno-relay
+> **Note**: This project is unrelated to [agno-agi/agno](https://github.com/agno-agi/agno) (Python agent framework).
+
+# agno-relay
 
 [![Conformance](https://img.shields.io/badge/conformance-100%25-brightgreen)](https://github.com/agno/agno)
 
