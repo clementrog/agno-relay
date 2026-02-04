@@ -3,6 +3,7 @@
 import { Command } from 'commander';
 import { runBridge } from './commands/bridge.js';
 import { runReport } from './commands/report.js';
+import { runDemo } from './commands/demo.js';
 
 const program = new Command();
 
@@ -36,6 +37,13 @@ program
     runReport({
       format: options.format ?? 'markdown',
     });
+  });
+
+program
+  .command('demo')
+  .description('Start demo with mock MCP server')
+  .action(async () => {
+    await runDemo();
   });
 
 program.parse();
