@@ -48,6 +48,31 @@ Capabilities:
   • Auth: bridge-level
 ```
 
+## Try it in 60 Seconds
+
+Run the built-in demo with a mock MCP server:
+
+```bash
+npx agno-relay demo
+```
+
+This starts a mock MCP server and bridge. Try these commands in another terminal:
+
+```bash
+# List repos
+curl -s http://localhost:3847/v1/chat/completions \
+  -H 'Content-Type: application/json' \
+  -d '{"model":"gpt-4","messages":[{"role":"assistant","content":null,"tool_calls":[{"id":"1","type":"function","function":{"name":"list_repos","arguments":"{}"}}]}]}' | jq '.'
+
+# See pagination in action
+./examples/curl/02-pagination.sh
+
+# Test idempotency
+./examples/curl/05-idempotency.sh
+```
+
+Press Ctrl+C to stop the demo.
+
 ## Usage
 
 ### Bridge Command
