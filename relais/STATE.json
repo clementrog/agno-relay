@@ -1,7 +1,0 @@
-{
-  "phase": "IDLE",
-  "current_task": null,
-  "attempt": 0,
-  "last_completed": "task-002",
-  "base_commit": "f972c68"
-}
