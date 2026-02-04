@@ -73,6 +73,29 @@ curl -s http://localhost:3847/v1/chat/completions \
 
 Press Ctrl+C to stop the demo.
 
+## Why This Exists
+
+### The Problem
+
+MCP servers expose powerful tools, but calling them directly from agents is risky:
+
+**Inconsistent Errors** → **Canonical Error Classes**
+
+- **Problem**: Every MCP server returns errors differently. GitHub returns `{"message": "...", "status": 403}`. Slack returns `{"error": "...", "ok": false}`. Your agent needs custom handling for each.
+- **Solution**: agno-relay wraps all errors in 8 deterministic classes (auth, permission, rate_limit, etc.) with explicit retry guidance.
+
+**Varying Pagination** → **Normalized Cursors**
+
+- **Problem**: GitHub uses `page`/`per_page`. Slack uses `cursor`. Notion uses `start_cursor`. Your agent needs to know each API's quirks.
+- **Solution**: agno-relay normalizes all pagination to `{has_more, cursor}`. Pass the cursor back to continue. Done.
+
+**Dangerous Retries** → **Safe Idempotency**
+
+- **Problem**: Retrying a failed `create_issue` might create duplicates. Retrying a failed `transfer_funds` could move money twice. Without idempotency, agents can't safely retry mutations.
+- **Solution**: Pass `X-Idempotency-Key` and agno-relay ensures the operation runs exactly once, even if you retry 10 times.
+
+agno-relay turns chaotic MCP calls into deterministic, retryable operations.
+
 ## Usage
 
 ### Bridge Command
