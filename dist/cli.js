@@ -2,10 +2,11 @@
 import { Command } from 'commander';
 import { runBridge } from './commands/bridge.js';
 import { runReport } from './commands/report.js';
+import { runDemo } from './commands/demo.js';
 const program = new Command();
 program
-    .name('agno')
-    .description('agno CLI')
+    .name('agno-relay')
+    .description('agno-relay — MCP to OpenAI reliability bridge')
     .version('1.0.0');
 program
     .command('bridge')
@@ -31,5 +32,11 @@ program
     runReport({
         format: options.format ?? 'markdown',
     });
+});
+program
+    .command('demo')
+    .description('Start demo with mock MCP server')
+    .action(async () => {
+    await runDemo();
 });
 program.parse();
